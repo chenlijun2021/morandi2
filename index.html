@@ -1,269 +1,907 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>易经美学实验室</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Ama's Tree - Morandi ASCII Harmony</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
-        
-        body { font-family: 'Inter', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
-        .font-mono { font-family: 'IBM Plex Mono', monospace; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        
-        @keyframes scanY {
-            0% { top: 0%; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; 
+            font-family: "Georgia", serif;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.5s;
         }
-        .animate-scan-y { animation: scanY 2.5s ease-in-out infinite; }
-
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        canvas { display: block; width: 100%; height: 100%; }
         
-        .zoom-in-95 { animation: zoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        #settings-wrapper {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: flex-start;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #settings-wrapper.collapsed {
+            transform: translateX(310px);
+        }
+        #settings-toggle {
+            width: 40px;
+            height: 40px;
+            background: rgba(248, 246, 240, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: -4px 4px 16px rgba(0,0,0,0.08);
+            color: #444;
+            user-select: none;
+            transition: background 0.2s;
+            margin-right: 12px;
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
+        #settings-toggle .toggle-icon {
+            display: inline-block;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 16px;
+        }
+        #settings-wrapper.collapsed #settings-toggle .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        #settings-panel {
+            background: rgba(248, 246, 240, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(230, 225, 215, 0.8);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+            width: 280px;
+            max-height: 85vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+        #settings-panel::-webkit-scrollbar { width: 4px; }
+        #settings-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
 
-        /* 微信内长按保存优化 */
-        .poster-container { user-select: none; -webkit-touch-callout: default; }
+        .panel-section {
+            font-size: 11px;
+            font-weight: 700;
+            color: #726d65;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 18px 0 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            padding-bottom: 6px;
+        }
+        .setting-item {
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .setting-item label {
+            font-size: 12px;
+            color: #4a4640;
+            flex-shrink: 0;
+        }
+        .setting-item input[type="color"] {
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 6px;
+            background: none;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+        }
+        .setting-item input[type="range"] {
+            width: 130px;
+            -webkit-appearance: none;
+            background: #e0ddd5;
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+        }
+        .setting-item input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: #626d58;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .setting-item input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .custom-file-btn {
+            background: #f0eee7;
+            border: 1px solid #dcd9d0;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 11px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+            text-align: center;
+        }
+        .custom-file-btn:hover { background: #e6e4dc; border-color: #c8c3b7; }
+        .custom-file-btn input[type="file"] { display: none; }
+
+        .file-upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .file-btn {
+            background: #f0eee7;
+            border: 1px dashed #c8c3b7;
+            border-radius: 8px;
+            padding: 8px 4px;
+            font-size: 11px;
+            text-align: center;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .file-btn:hover { background: #e6e4dc; border-color: #a8a397; }
+        .file-btn input { display: none; }
+        
+        .action-btn {
+            width: 100%;
+            background: #f0eee7;
+            border: 1px solid #dcd9d0;
+            border-radius: 8px;
+            padding: 8px 0;
+            font-size: 11px;
+            color: #4a4640;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: #e6e4dc; }
+
+        #hint {
+            position: absolute; bottom: 30px; left: 50%;
+            transform: translateX(-50%); font-size: 13px;
+            letter-spacing: 2px; color: #a09c90;
+            pointer-events: none; font-style: italic;
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
-<body class="bg-[#F0F0F0] overflow-hidden">
-    <div id="app"></div>
+<body>
 
-    <!-- React 运行环境 -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <div id="settings-wrapper">
+        <div id="settings-toggle" title="展开/收起控制面板">
+            <span class="toggle-icon">➔</span>
+        </div>
+        
+        <div id="settings-panel">
+            <div class="panel-section" style="margin-top: 0;">色彩与背景</div>
+            <div class="setting-item">
+                <label>背景颜色</label>
+                <input type="color" id="bgColor" value="#f8f6f0">
+            </div>
+            
+            <div class="setting-item">
+                <label>上传背景图</label>
+                <label class="custom-file-btn">
+                    选择图片
+                    <input type="file" id="bgImgFile" accept="image/*">
+                </label>
+            </div>
+            <button id="clearBgImgBtn" class="action-btn" style="display: none;">清除背景图</button>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+            <div class="setting-item" style="margin-top: 12px;">
+                <label>树枝颜色</label>
+                <input type="color" id="branchColor" value="#3d3833">
+            </div>
+            <div class="setting-item">
+                <label>树叶字符</label>
+                <input type="color" id="leafColor" value="#626d58">
+            </div>
+            <div class="setting-item">
+                <label>诗句文字</label>
+                <input type="color" id="textColor" value="#2b2927">
+            </div>
 
-        const apiKey = ""; // 运行时自动填充
+            <div class="panel-section">树体位置微调</div>
+            <div class="setting-item">
+                <label>X轴 偏移</label>
+                <input type="range" id="treeOffsetX" min="-300" max="300" value="0">
+            </div>
+            <div class="setting-item">
+                <label>Y轴 偏移</label>
+                <input type="range" id="treeOffsetY" min="-300" max="300" value="0">
+            </div>
 
-        const Icons = {
-            Scan: () => (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M9 12h6M12 9v6" />
-                </svg>
-            ),
-            Close: () => (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-            ),
-            Loading: () => (
-                <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeLinecap="round" />
-                </svg>
-            )
-        };
+            <div class="panel-section">ASCII 挂物设置</div>
+            <div class="setting-item">
+                <label>连线长度</label>
+                <input type="range" id="threadLen" min="20" max="400" value="75">
+            </div>
+            <div class="setting-item">
+                <label>连线粗细</label>
+                <input type="range" id="threadThick" min="0.5" max="4" value="0.8" step="0.1">
+            </div>
+            <div class="setting-item">
+                <label>底图透明度</label>
+                <input type="range" id="bgImgOpacity" min="0" max="1" value="1.0" step="0.05">
+            </div>
+            <div class="setting-item">
+                <label>挂物整体大小</label>
+                <input type="range" id="itemScale" min="0.1" max="5.0" value="1.0" step="0.1">
+            </div>
+            <div class="setting-item">
+                <label>字符尺寸</label>
+                <input type="range" id="asciiSize" min="7" max="18" value="10">
+            </div>
+            <div class="setting-item">
+                <label>采样密度</label>
+                <input type="range" id="asciiStep" min="12" max="60" value="28">
+            </div>
 
-        function App() {
-            const [step, setStep] = useState('entry');
-            const [loading, setLoading] = useState(false);
-            const [data, setData] = useState(null);
-            const [theme, setTheme] = useState('lab');
-            const [showPoster, setShowPoster] = useState(false);
-            const [generatedIllustration, setGeneratedIllustration] = useState(null);
-            const [isGeneratingImg, setIsGeneratingImg] = useState(false);
-            const [decryptText, setDecryptText] = useState('00000000');
-            const fileInputRef = useRef(null);
+            <div class="file-upload-grid">
+                <label class="file-btn" id="lbl-0">物 1: 瓶罐<input type="file" id="file-0" accept="image/*"></label>
+                <label class="file-btn" id="lbl-1">物 2: 圆花瓶<input type="file" id="file-1" accept="image/*"></label>
+                <label class="file-btn" id="lbl-2">物 3: 方尊<input type="file" id="file-2" accept="image/*"></label>
+                <label class="file-btn" id="lbl-3">物 4: 执壶<input type="file" id="file-3" accept="image/*"></label>
+            </div>
+        </div>
+    </div>
 
-            useEffect(() => {
-                if (!loading) return;
-                const interval = setInterval(() => {
-                    setDecryptText(Math.random().toString(36).substring(2, 10).toUpperCase());
-                }, 80);
-                return () => clearInterval(interval);
-            }, [loading]);
+    <canvas id="canvas"></canvas>
+    <div id="hint"></div>
 
-            const extractJSON = (text) => {
-                try {
-                    const markdownMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/);
-                    if (markdownMatch) return JSON.parse(markdownMatch[1].trim());
-                    const start = text.indexOf('{');
-                    const end = text.lastIndexOf('}');
-                    if (start !== -1 && end !== -1) return JSON.parse(text.substring(start, end + 1).trim());
-                    return JSON.parse(text.trim());
-                } catch (e) {
-                    throw new Error("JSON 解析失败");
-                }
-            };
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const treeCanvas = document.createElement('canvas');
+        const tctx = treeCanvas.getContext('2d');
 
-            const generateIllustration = async (moodData) => {
-                setIsGeneratingImg(true);
-                const prompt = `Minimalist black ink line drawing on white paper, sketchbook style, naive art, very simple. Subject: ${moodData.illustration_prompt}. No colors, just black lines. Healing vibe.`;
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ instances: { prompt }, parameters: { sampleCount: 1 } })
-                    });
-                    const result = await response.json();
-                    if (result.predictions?.[0]) setGeneratedIllustration(`data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`);
-                } catch (err) { console.error(err); }
-                finally { setIsGeneratingImg(false); }
-            };
+        const settingsWrapper = document.getElementById('settings-wrapper');
+        const settingsPanel = document.getElementById('settings-panel');
+        const settingsToggle = document.getElementById('settings-toggle');
+        const bgColorInput = document.getElementById('bgColor');
+        const bgImgFileInput = document.getElementById('bgImgFile');
+        const clearBgImgBtn = document.getElementById('clearBgImgBtn');
 
-            const runProtocol = async (base64Image) => {
-                setLoading(true);
-                const prompt = `作为易经命理实验室AI，请分析这张掌纹。必须严格输出JSON，不要有说明文字：{"protocol_id": "ARCHIVE-XXX","hexagram": "卦名","core_insight": "3-4句观测记录","poster_quote": "金句","metrics": {"天位能量": 80, "地位根基": 70, "人位情感": 60},"aesthetic_guide": {"color_name": "名称","color_hex": "#HEX","outfit_detail": "建议","vibe": "情绪"},"illustration_prompt": "simple english noun of a healing object"}`;
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: "image/png", data: base64Image.split(',')[1] } }] }] })
-                    });
-                    const resData = await response.json();
-                    const text = resData.candidates?.[0]?.content?.parts?.[0]?.text;
-                    const json = extractJSON(text);
-                    setData(json);
-                    setStep('report');
-                    generateIllustration(json);
-                } catch (err) { setStep('entry'); }
-                finally { setLoading(false); }
-            };
+        const branchColorInput = document.getElementById('branchColor');
+        const leafColorInput = document.getElementById('leafColor');
+        const textColorInput = document.getElementById('textColor');
+        
+        const treeOffsetXInput = document.getElementById('treeOffsetX');
+        const treeOffsetYInput = document.getElementById('treeOffsetY');
 
-            const handleUpload = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => runProtocol(ev.target.result);
-                    reader.readAsDataURL(file);
-                }
-            };
+        const threadLenInput = document.getElementById('threadLen');
+        const threadThickInput = document.getElementById('threadThick');
+        const bgImgOpacityInput = document.getElementById('bgImgOpacity');
+        const itemScaleInput = document.getElementById('itemScale');
+        const asciiSizeInput = document.getElementById('asciiSize');
+        const asciiStepInput = document.getElementById('asciiStep');
 
-            const c = theme === 'lab' ? 
-                { bg: 'bg-[#F0F0F0]', card: 'bg-white', text: 'text-[#121212]', accent: 'border-[#E0E0E0]' } : 
-                { bg: 'bg-[#E8DDC3]', card: 'bg-[#F2EBD7]', text: 'text-[#483A2C]', accent: 'border-[#D0C4A8]' };
+        let width, height, dpr;
+        let particles = [];
+        let currentMode = 'tree'; 
+        let transitionStartTime = 0;
+        let treeOpacity = 1.0;
+        let branches = [];
+        let leafPoints = [];
+        let layouts = [];
 
-            return (
-                <div className={`min-h-screen ${c.bg} flex items-center justify-center p-4 transition-colors duration-700`}>
-                    <div className={`w-full max-w-[400px] h-[844px] ${c.card} ${c.text} rounded-[2.5rem] shadow-2xl overflow-hidden relative flex flex-col border border-black/5`}>
-                        <header className={`p-6 pb-4 border-b ${c.accent} flex justify-between items-center bg-inherit z-20`}>
-                            <div className="space-y-0.5">
-                                <h2 className="text-sm font-black tracking-tighter">易经美学实验室</h2>
-                                <p className="text-[9px] opacity-30 font-mono tracking-widest">Protocol v4.2</p>
-                            </div>
-                            <div className="flex bg-black/5 p-1 rounded-full border border-black/5">
-                                <button onClick={() => setTheme('lab')} className={`px-4 py-1 rounded-full text-[10px] font-bold ${theme === 'lab' ? 'bg-white shadow-sm' : 'opacity-30'}`}>工业灰</button>
-                                <button onClick={() => setTheme('paper')} className={`px-4 py-1 rounded-full text-[10px] font-bold ${theme === 'paper' ? 'bg-white shadow-sm' : 'opacity-30'}`}>牛皮纸</button>
-                            </div>
-                        </header>
+        // Dynamic Position Offsets
+        let treeOffsetX = parseInt(treeOffsetXInput.value);
+        let treeOffsetY = parseInt(treeOffsetYInput.value);
 
-                        <main className="flex-1 overflow-y-auto scrollbar-hide">
-                            {step === 'entry' ? (
-                                <div className="p-8 h-full flex flex-col animate-fade-in">
-                                    <div className="mt-6 space-y-4">
-                                        <h1 className="text-[42px] font-black leading-[0.9] tracking-tighter">拓扑<br/>解析</h1>
-                                        <div className="h-0.5 w-8 bg-current opacity-20"></div>
-                                        <p className="text-xs leading-relaxed opacity-60">在此上传样本照片。<br/>我们将通过纹路逻辑，逆推您的能量场。</p>
-                                    </div>
-                                    <div className="flex-1 flex items-center justify-center">
-                                        <div onClick={() => !loading && fileInputRef.current.click()} className={`w-full aspect-square border-2 border-dashed ${c.accent} rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden transition-all ${loading ? 'bg-black/5' : 'cursor-pointer hover:bg-black/5'}`}>
-                                            {loading ? (
-                                                <div className="flex flex-col items-center space-y-5">
-                                                    <Icons.Loading />
-                                                    <div className="text-center">
-                                                        <div className="text-[11px] font-black tracking-widest animate-pulse">解析样本中...</div>
-                                                        <div className="text-[9px] font-mono opacity-40 uppercase tracking-tighter">{decryptText}</div>
-                                                    </div>
-                                                    <div className="absolute top-0 left-0 w-full h-1 bg-current opacity-20 animate-scan-y"></div>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <div className="p-4 bg-current/5 rounded-full mb-4"><Icons.Scan /></div>
-                                                    <span className="text-xs font-bold opacity-40">上传掌纹</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <input type="file" ref={fileInputRef} className="hidden" onChange={handleUpload} accept="image/*" />
-                                </div>
-                            ) : (
-                                <div className="p-8 space-y-10 animate-fade-in pb-32">
-                                    <div className="space-y-2">
-                                        <div className="text-[10px] font-bold opacity-20 font-mono tracking-widest uppercase">Result // {data.protocol_id}</div>
-                                        <h1 className="text-5xl font-black tracking-tighter">{data.hexagram}卦</h1>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div className="text-[11px] font-black opacity-30 tracking-[0.2em] border-b pb-2 border-current/10 uppercase">核心观测</div>
-                                        <p className="text-[13px] leading-relaxed text-justify opacity-90">{data.core_insight}</p>
-                                    </div>
-                                    <div className="p-6 border border-current/10 rounded-[1.5rem] bg-black/[0.02] space-y-6">
-                                        <div className="text-[11px] font-black opacity-30 tracking-[0.2em] uppercase">美学介入处方</div>
-                                        <div className="flex items-center space-x-4">
-                                            <div className="w-12 h-12 rounded-full border border-black/5" style={{ backgroundColor: data.aesthetic_guide.color_hex }}></div>
-                                            <div className="space-y-0.5">
-                                                <div className="text-xs font-bold">{data.aesthetic_guide.color_name}</div>
-                                                <div className="text-[9px] opacity-30 font-mono">{data.aesthetic_guide.color_hex}</div>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-5">
-                                            <div className="text-[12px]"><span className="font-bold opacity-30 block text-[9px] mb-1 uppercase">Outfit</span>{data.aesthetic_guide.outfit_detail}</div>
-                                            <div className="text-[12px]"><span className="font-bold opacity-30 block text-[9px] mb-1 uppercase">Vibe</span>{data.aesthetic_guide.vibe}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </main>
+        // Uploaded Custom Canvas Background Image
+        let uploadedBgImage = null;
 
-                        {step === 'report' && (
-                            <div className="absolute bottom-0 left-0 right-0 p-6 bg-inherit/80 backdrop-blur-md border-t border-current/5 flex space-x-3 z-30">
-                                <button onClick={() => setStep('entry')} className="h-14 px-6 border border-current/10 rounded-2xl flex items-center justify-center font-bold text-xs opacity-40">重启</button>
-                                <button onClick={() => setShowPoster(true)} className="flex-1 h-14 bg-[#111111] text-white rounded-2xl text-[11px] font-bold tracking-[0.2em] active:scale-95 shadow-xl">生成分享海报</button>
-                            </div>
-                        )}
+        // Global control variables
+        let threadBaseLen = parseInt(threadLenInput.value);
+        let threadThick = parseFloat(threadThickInput.value);
+        let bgImgOpacity = parseFloat(bgImgOpacityInput.value);
+        let globalItemScale = parseFloat(itemScaleInput.value);
 
-                        {showPoster && (
-                            <div className="absolute inset-0 z-[100] bg-black/95 backdrop-blur-2xl p-6 flex flex-col items-center justify-center animate-fade-in">
-                                <div className="w-full max-w-[340px] aspect-[4/6] bg-white rounded-[2.5rem] p-10 flex flex-col relative overflow-hidden shadow-2xl text-[#111111] poster-container">
-                                    <div className="absolute inset-0 pointer-events-none opacity-[0.08]" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/handmade-paper.png')` }}></div>
-                                    <header className="flex justify-between items-start mb-4">
-                                        <div className="text-3xl font-black tracking-tighter">{data.hexagram}卦</div>
-                                        <div className="text-[8px] font-mono opacity-20 text-right uppercase">Destiny Lab<br/>Handwritten</div>
-                                    </header>
-                                    <div className="h-px w-full bg-black/5 mb-8"></div>
-                                    <div className="flex-1 flex flex-col justify-center items-center">
-                                        <div className="w-full aspect-square relative flex items-center justify-center">
-                                            {isGeneratingImg ? (
-                                                <Icons.Loading />
-                                            ) : generatedIllustration ? (
-                                                <img src={generatedIllustration} className="w-full h-full object-contain mix-blend-multiply opacity-90 zoom-in-95" />
-                                            ) : (
-                                                <div className="text-[9px] opacity-10">Drawing...</div>
-                                            )}
-                                        </div>
-                                        <div className="mt-8 text-center">
-                                            <div className="text-[16px] font-bold leading-snug">“ {data.poster_quote} ”</div>
-                                            <div className="text-[9px] opacity-30 italic mt-2">Captured at Lab</div>
-                                        </div>
-                                    </div>
-                                    <footer className="mt-auto pt-8 flex justify-between items-end">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: data.aesthetic_guide.color_hex }}></div>
-                                            <span className="text-[9px] font-bold opacity-40 uppercase">{data.aesthetic_guide.color_name}</span>
-                                        </div>
-                                        <div className="text-[7px] font-mono opacity-20 uppercase tracking-[0.3em]">PRIVATE_DOC</div>
-                                    </footer>
-                                </div>
-                                <div className="mt-8 flex flex-col items-center space-y-6">
-                                    <span className="text-white/50 text-[10px] font-bold tracking-[0.3em] uppercase animate-pulse">长按保存这份手账档案</span>
-                                    <button onClick={() => setShowPoster(false)} className="w-14 h-14 rounded-full bg-white/10 text-white flex items-center justify-center"><Icons.Close /></button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
+        function hexToRgb(hex) {
+            let c = hex.substring(1);
+            let rgb = parseInt(c, 16);
+            return { r: (rgb >> 16) & 255, g: (rgb >> 8) & 255, b: rgb & 255 };
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('app'));
-        root.render(<App />);
+        let colors = {
+            bg: bgColorInput.value,
+            branch: branchColorInput.value,
+            leaf: leafColorInput.value,
+            text: textColorInput.value
+        };
+        let leafRGB = hexToRgb(colors.leaf);
+        let textRGB = hexToRgb(colors.text);
+        
+        let asciiFontSize = parseInt(asciiSizeInput.value);
+        let asciiSamplingStep = parseInt(asciiStepInput.value);
+
+        const poem = "In the quiet realm of subtle tones and muted harmonies, Giorgio Morandi found infinite poetry within the simplest forms. Through dusty bottles, silent vessels, and understated hues, he revealed the intimate rhythm of stillness. Color becomes a soft whisper, space turns into breath, and time pauses in a timeless dance of light, shade, and profound serenity.";
+        const validRandomChars = "abcdefghijklmnopqrstuvwxyz";
+
+        let hangingItems = [];
+        
+        function createDefaultItemCanvas(type, color) {
+            let c = document.createElement('canvas');
+            // 4x Resolution to avoid blurriness when scaled up
+            c.width = 240; c.height = 320; 
+            let cx = c.getContext('2d');
+            cx.fillStyle = color;
+            cx.beginPath();
+            if (type === 0) { // 瓶罐
+                cx.ellipse(120, 180, 80, 100, 0, 0, Math.PI*2);
+                cx.rect(80, 40, 80, 60);
+            } else if (type === 1) { // 圆花瓶
+                cx.arc(120, 200, 100, 0, Math.PI*2);
+                cx.rect(88, 40, 64, 80);
+            } else if (type === 2) { // 方尊
+                cx.moveTo(60, 40); cx.lineTo(180, 40);
+                cx.lineTo(140, 280); cx.lineTo(200, 280);
+                cx.lineTo(140, 280); cx.lineTo(100, 280);
+            } else if (type === 3) { // 执壶
+                cx.ellipse(120, 200, 80, 80, 0, 0, Math.PI*2);
+                cx.rect(88, 60, 64, 80);
+                cx.arc(60, 180, 40, Math.PI/2, Math.PI*1.5);
+                cx.moveTo(180, 180); cx.lineTo(220, 120);
+            }
+            cx.fill();
+            return c;
+        }
+
+        let itemCanvases = [
+            createDefaultItemCanvas(0, '#5a564d'),
+            createDefaultItemCanvas(1, '#5a564d'),
+            createDefaultItemCanvas(2, '#5a564d'),
+            createDefaultItemCanvas(3, '#5a564d')
+        ];
+
+        // 绑定挂物上传事件
+        for (let i = 0; i < 4; i++) {
+            document.getElementById('file-' + i).onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const img = new Image();
+                img.onload = () => {
+                    let c = document.createElement('canvas');
+                    // Uploaded items also map to the high resolution constraints
+                    let targetW = 240, targetH = 320;
+                    let scale = Math.min(targetW / img.width, targetH / img.height);
+                    c.width = img.width * scale;
+                    c.height = img.height * scale;
+                    let cCtx = c.getContext('2d');
+                    cCtx.drawImage(img, 0, 0, c.width, c.height);
+                    itemCanvases[i] = c;
+                    
+                    document.getElementById('lbl-' + i).style.background = '#dbe5d0';
+                    document.getElementById('lbl-' + i).style.borderColor = '#8c9c78';
+                    rebuildTreePosition(); 
+                };
+                img.src = URL.createObjectURL(file);
+            };
+        }
+
+        // Prevent all clicks inside settings panel from triggering canvas tree/poem toggle
+        ['click', 'touchstart', 'touchend', 'mousedown'].forEach(evt => {
+            settingsWrapper.addEventListener(evt, (e) => e.stopPropagation());
+        });
+
+        // Toggle panel collapsed status
+        let isPanelCollapsed = false;
+        settingsToggle.onclick = (e) => {
+            e.stopPropagation();
+            isPanelCollapsed = !isPanelCollapsed;
+            if (isPanelCollapsed) {
+                settingsWrapper.classList.add('collapsed');
+            } else {
+                settingsWrapper.classList.remove('collapsed');
+            }
+        };
+
+        // Background Custom Image Listener
+        bgImgFileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const img = new Image();
+            img.onload = () => {
+                uploadedBgImage = img;
+                clearBgImgBtn.style.display = 'block';
+            };
+            img.src = URL.createObjectURL(file);
+        };
+
+        clearBgImgBtn.onclick = () => {
+            uploadedBgImage = null;
+            bgImgFileInput.value = '';
+            clearBgImgBtn.style.display = 'none';
+        };
+
+        // Position sliders listeners
+        treeOffsetXInput.oninput = (e) => {
+            treeOffsetX = parseInt(e.target.value);
+            rebuildTreePosition();
+        };
+        treeOffsetYInput.oninput = (e) => {
+            treeOffsetY = parseInt(e.target.value);
+            rebuildTreePosition();
+        };
+
+        bgColorInput.oninput = (e) => {
+            colors.bg = e.target.value;
+            document.body.style.backgroundColor = colors.bg;
+        };
+        // Set initial background color
+        document.body.style.backgroundColor = bgColorInput.value;
+
+        branchColorInput.oninput = (e) => {
+            colors.branch = e.target.value;
+            drawTreeToBuffer();
+        };
+        
+        leafColorInput.oninput = (e) => {
+            colors.leaf = e.target.value;
+            leafRGB = hexToRgb(colors.leaf);
+        };
+        
+        textColorInput.oninput = (e) => {
+            colors.text = e.target.value;
+            textRGB = hexToRgb(colors.text);
+        };
+
+        threadLenInput.oninput = (e) => { 
+            threadBaseLen = parseInt(e.target.value); 
+            rebuildTreePosition(); 
+        };
+        
+        threadThickInput.oninput = (e) => { 
+            threadThick = parseFloat(e.target.value); 
+        };
+        
+        bgImgOpacityInput.oninput = (e) => { 
+            bgImgOpacity = parseFloat(e.target.value); 
+        };
+        
+        itemScaleInput.oninput = (e) => { 
+            globalItemScale = parseFloat(e.target.value); 
+        };
+        
+        asciiSizeInput.oninput = (e) => { 
+            asciiFontSize = parseInt(e.target.value); 
+        };
+        
+        asciiStepInput.oninput = (e) => { 
+            asciiSamplingStep = parseInt(e.target.value); 
+            updateASCIIParticles(); 
+        };
+
+        function rebuildTreePosition() {
+            buildTreeAndLayout();
+            updateASCIIParticles();
+        }
+
+        function buildTreeAndLayout() {
+            particles = []; branches = []; leafPoints = [];
+            hangingItems = []; layouts = [];
+
+            let rootX = width / 2 + treeOffsetX;
+            let rootY = height * 0.95 + treeOffsetY;
+
+            function buildTree(x, y, len, angle, bWidth, depth) {
+                let endX = x + len * Math.cos(angle);
+                let endY = y + len * Math.sin(angle);
+                branches.push({ x1: x, y1: y, x2: endX, y2: endY, w: bWidth, depth });
+                
+                if (depth <= 5) {
+                    let c = depth === 0 ? 10 : 4;
+                    for(let i = 0; i < c; i++){
+                        leafPoints.push({
+                            x: x + (endX - x) * Math.random() + (Math.random()-0.5)*80,
+                            y: y + (endY - y) * Math.random() + (Math.random()-0.5)*80
+                        });
+                    }
+                }
+                if (depth === 0) return;
+                buildTree(endX, endY, len*(0.7+Math.random()*0.15), angle+(Math.random()-0.5)*1.1, bWidth*0.7, depth-1);
+                if(Math.random() > 0.45) buildTree(endX, endY, len*(0.6+Math.random()*0.1), angle+(Math.random()-0.5)*1.2, bWidth*0.7, depth-1);
+            }
+            buildTree(rootX, rootY, Math.min(width, height)*0.25, -Math.PI/2, 14, 8);
+
+            drawTreeToBuffer();
+
+            const candidates = branches.filter(b => b.depth <= 4 && b.depth >= 2);
+            for(let i = 0; i < 4; i++) {
+                let candidate = candidates[Math.floor((i + 0.2) * (candidates.length / 4))] || branches[i * 2];
+                hangingItems.push({
+                    anchorX: candidate.x2,
+                    anchorY: candidate.y2,
+                    lineLen: threadBaseLen + i * 15,
+                    angle: 0,
+                    itemIdx: i,
+                    canvas: itemCanvases[i],
+                    currentScale: globalItemScale
+                });
+            }
+
+            ctx.font = 'italic 16px "Georgia", serif';
+            let padding = width > 600 ? 120 : 40;
+            let maxWidth = Math.min(width - padding * 2, 580);
+            let startX = (width - maxWidth) / 2;
+            let cx = startX, cy = 0;
+            const lineHeight = 28;
+
+            poem.split('\n').forEach(para => {
+                if(para === "") { cy += lineHeight * 0.7; return; }
+                para.split(' ').forEach(word => {
+                    let wWidth = ctx.measureText(word).width;
+                    if(cx + wWidth > startX + maxWidth) { cx = startX; cy += lineHeight; }
+                    for(let char of word) {
+                        layouts.push({ 
+                            char, x: cx + (Math.random()-0.5)*1.2, y: cy + (Math.random()-0.5)*1.2, rot: (Math.random()-0.5)*0.04 
+                        });
+                        cx += ctx.measureText(char).width;
+                    }
+                    cx += ctx.measureText(" ").width;
+                });
+                cx = startX; cy += lineHeight * 1.5;
+            });
+            let offY = (height - cy) / 2;
+            layouts.forEach(l => l.y += offY);
+
+            let leafCount = Math.min(leafPoints.length, 350);
+            for(let i = 0; i < leafCount; i++) {
+                let lp = leafPoints[i % leafPoints.length];
+                particles.push({
+                    type: 'leaf',
+                    treeX: lp.x, treeY: lp.y, treeRot: (Math.random()-0.5)*0.5,
+                    x: lp.x, y: lp.y, vx: 0, vy: 0,
+                    rot: Math.random()*Math.PI*2, phase: Math.random()*Math.PI*2,
+                    delay: Math.random() * 800, state: 'perched', alpha: 1.0
+                });
+            }
+        }
+
+        function updateASCIIParticles() {
+            particles = particles.filter(p => p.type === 'leaf');
+            hangingItems.forEach((item, itemIdx) => {
+                const asciiPoints = extractAsciiPoints(item.canvas, asciiSamplingStep);
+                asciiPoints.forEach(pt => {
+                    particles.push({
+                        type: 'ascii', itemIdx: itemIdx,
+                        relX: pt.relX, relY: pt.relY, char: pt.char,
+                        baseR: pt.r, baseG: pt.g, baseB: pt.b,
+                        treeX: item.anchorX + pt.relX, treeY: item.anchorY + item.lineLen + pt.relY, treeRot: 0,
+                        x: item.anchorX + pt.relX, y: item.anchorY + item.lineLen + pt.relY,
+                        vx: 0, vy: 0, rot: (Math.random()-0.5)*0.2, phase: Math.random()*Math.PI*2,
+                        delay: Math.random() * 800, state: 'perched', alpha: 1.0
+                    });
+                });
+            });
+            mapParticlesToPoem();
+        }
+
+        function mapParticlesToPoem() {
+            for(let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                if (i < layouts.length) {
+                    p.charTarget = layouts[i].char; p.textX = layouts[i].x;
+                    p.textY = layouts[i].y; p.textRot = layouts[i].rot; p.isExcess = false;
+                } else {
+                    p.charTarget = p.char || validRandomChars[Math.floor(Math.random() * validRandomChars.length)];
+                    p.textX = width/2 + (Math.random()-0.5)*400; p.textY = -50 - Math.random()*150; 
+                    p.textRot = (Math.random()-0.5)*0.5; p.isExcess = true; 
+                }
+            }
+        }
+
+        function drawTreeToBuffer() {
+            tctx.save();
+            tctx.setTransform(1, 0, 0, 1, 0, 0);
+            tctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
+            tctx.restore();
+            tctx.strokeStyle = colors.branch;
+            tctx.lineCap = 'round';
+            branches.forEach(b => {
+                tctx.lineWidth = b.w;
+                tctx.beginPath(); tctx.moveTo(b.x1, b.y1); tctx.lineTo(b.x2, b.y2); tctx.stroke();
+            });
+        }
+
+        function render(time) {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+            
+            if (uploadedBgImage) {
+                ctx.save();
+                ctx.globalAlpha = 1.0;
+                ctx.drawImage(uploadedBgImage, 0, 0, width, height);
+                ctx.restore();
+            }
+
+            const now = performance.now();
+            let targetTreeAlpha = (currentMode === 'tree' && transitionStartTime === 0) ? 1.0 : 0.1;
+            if (transitionStartTime !== 0) targetTreeAlpha = 0.2;
+            treeOpacity += (targetTreeAlpha - treeOpacity) * 0.03;
+
+            let modeProgress = 0; 
+            if (transitionStartTime !== 0) {
+                let elapsed = now - transitionStartTime;
+                modeProgress = currentMode === 'poem' ? Math.min(1, elapsed/4500) : Math.max(0, 1 - elapsed/4500);
+            } else { modeProgress = currentMode === 'poem' ? 1 : 0; }
+            
+            ctx.globalAlpha = treeOpacity;
+            if(treeCanvas.width > 0) {
+                ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(treeCanvas, 0, 0); ctx.restore();
+            }
+
+            // Sequential heartbeat effect logic
+            let cycleTime = 4000; 
+            let currentCycle = now % cycleTime;
+            let activeIdx = Math.floor(currentCycle / 1000);
+            let activeProgress = (currentCycle % 1000) / 1000;
+
+            hangingItems.forEach((item, idx) => {
+                item.angle = Math.sin(now * 0.0012 + idx * 1.5) * 0.08 + Math.cos(now * 0.002 + idx) * 0.04;
+                const tipX = item.anchorX + item.lineLen * Math.sin(item.angle);
+                const tipY = item.anchorY + item.lineLen * Math.cos(item.angle);
+                item.currTipX = tipX; item.currTipY = tipY;
+
+                // Scale Logic: Base scale + breathing bounce effect whenever items are hanging on tree
+                let currentScale = globalItemScale;
+                if (idx === activeIdx && currentMode === 'tree') {
+                    currentScale += Math.sin(activeProgress * Math.PI) * 0.35; // Expand up to +35%
+                }
+                item.currentScale = currentScale;
+
+                if (treeOpacity > 0.05) {
+                    ctx.save();
+                    ctx.strokeStyle = colors.branch;
+                    ctx.lineWidth = threadThick; // UI Controlled
+                    ctx.beginPath();
+                    ctx.moveTo(item.anchorX, item.anchorY);
+                    const midX = (item.anchorX + tipX) / 2 + Math.sin(now * 0.002 + idx) * 3;
+                    const midY = (item.anchorY + tipY) / 2;
+                    ctx.quadraticCurveTo(midX, midY, tipX, tipY);
+                    ctx.stroke();
+
+                    // Calculate image alpha using custom background image opacity setting
+                    let imageAlpha = (currentMode === 'tree') ? bgImgOpacity * (1.0 - modeProgress) : 0; 
+                    if (item.canvas && imageAlpha > 0.001) {
+                        ctx.save();
+                        ctx.translate(tipX, tipY);
+                        ctx.rotate(item.angle * 0.6);
+                        // Multiply visual scale by 0.25 to compensate for the 4x high-res texture
+                        let renderScale = item.currentScale * 0.25;
+                        ctx.scale(renderScale, renderScale); 
+                        ctx.globalAlpha = imageAlpha;
+                        ctx.drawImage(item.canvas, -item.canvas.width/2, -item.canvas.height/2);
+                        ctx.restore();
+                    }
+                    ctx.restore();
+                }
+            });
+
+            ctx.globalAlpha = 1.0;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            let currentFont = 0; 
+            
+            // Limit N^2 flocking checks for performance
+            let sampleStep = Math.max(1, Math.floor(particles.length / 40));
+
+            particles.forEach((p) => {
+                if (p.type === 'ascii') {
+                    const item = hangingItems[p.itemIdx];
+                    if (item) {
+                        const cosA = Math.cos(item.angle * 0.6);
+                        const sinA = Math.sin(item.angle * 0.6);
+                        // ASCII particle calculation needs to match the 0.25 render scale offset
+                        let sc = item.currentScale * 0.25;
+                        p.treeX = item.currTipX + (p.relX * sc * cosA - p.relY * sc * sinA);
+                        p.treeY = item.currTipY + (p.relX * sc * sinA + p.relY * sc * cosA);
+                        p.treeRot = item.angle * 0.6;
+                    }
+                }
+
+                let isMoving = transitionStartTime !== 0;
+
+                if (isMoving) {
+                    let elapsed = now - transitionStartTime;
+                    
+                    if (p.state === 'perched' && elapsed > p.delay) {
+                        p.state = 'flocking';
+                        p.vx = (Math.random()-0.5) * 6; p.vy = -3 - Math.random() * 5;
+                    }
+
+                    if (p.state === 'flocking' || p.state === 'settling') {
+                        let accX = 0, accY = 0;
+                        if (elapsed > 3800 + p.delay) p.state = 'settling';
+
+                        let targetX = (currentMode === 'poem') ? p.textX : p.treeX;
+                        let targetY = (currentMode === 'poem') ? p.textY : p.treeY;
+                        let targetRot = (currentMode === 'poem') ? p.textRot : p.treeRot;
+
+                        if (p.state === 'flocking') {
+                            let centerX = width * 0.5;
+                            let centerY = height * 0.45;
+                            // Restored beautiful organic flocking behavior, optimized via sampleStep
+                            accX += (centerX + Math.sin(now*0.001)*100 - p.x) * 0.0006;
+                            accY += (centerY + Math.cos(now*0.001)*100 - p.y) * 0.0006;
+                            
+                            for(let j=0; j<particles.length; j+=sampleStep) {
+                                let other = particles[j];
+                                if (p === other) continue;
+                                let d = Math.hypot(p.x - other.x, p.y - other.y);
+                                if(d > 0 && d < 70) {
+                                    accX += (p.x - other.x) * 0.02;
+                                    accY += (p.y - other.y) * 0.02;
+                                    accX += other.vx * 0.02;
+                                    accY += other.vy * 0.02;
+                                }
+                            }
+                        }
+
+                        if (p.state === 'settling') {
+                            let dx = targetX - p.x; let dy = targetY - p.y;
+                            let d = Math.hypot(dx, dy);
+                            let pull = Math.min(0.15, 100 / (d + 1));
+                            accX += dx * pull * 0.025; accY += dy * pull * 0.025;
+                            p.vx *= 0.92; p.vy *= 0.92;
+                            if (d < 1 && Math.abs(p.vx) < 0.1) {
+                                p.x = targetX; p.y = targetY; p.vx = 0; p.vy = 0;
+                            }
+                        }
+
+                        p.vx += accX; p.vy += accY;
+                        let speed = Math.hypot(p.vx, p.vy);
+                        let limit = p.state === 'settling' ? 4 : 8;
+                        if(speed > limit) { p.vx = (p.vx/speed)*limit; p.vy = (p.vy/speed)*limit; }
+
+                        p.x += p.vx; p.y += p.vy;
+                        p.rot += (p.state === 'settling' ? (targetRot - p.rot) : (Math.atan2(p.vy, p.vx) - p.rot)) * 0.1;
+                    }
+                } else {
+                    if (currentMode === 'tree') {
+                        if (p.type === 'leaf') {
+                            let windX = Math.sin(now * 0.001 + p.phase) * 6;
+                            let windY = Math.cos(now * 0.0008 + p.phase) * 4;
+                            p.x += (p.treeX + windX - p.x) * 0.1;
+                            p.y += (p.treeY + windY - p.y) * 0.1;
+                            p.rot += (p.treeRot + Math.sin(now*0.002+p.phase)*0.1 - p.rot) * 0.05;
+                        } else {
+                            p.x += (p.treeX - p.x) * 0.2; p.y += (p.treeY - p.y) * 0.2; p.rot += (p.treeRot - p.rot) * 0.2;
+                        }
+                    } else {
+                        p.x += (p.textX - p.x) * 0.1; p.y += (p.textY - p.y) * 0.1; p.rot += (p.textRot - p.rot) * 0.1;
+                    }
+                }
+
+                let targetAlpha = (currentMode === 'poem' && p.isExcess) ? 0.0 : 1.0;
+                p.alpha += (targetAlpha - p.alpha) * 0.04;
+
+                if (p.alpha > 0.01) {
+                    let colorT = (currentMode === 'poem') ? 
+                        Math.min(1, Math.max(0, (now - transitionStartTime - p.delay) / 4500)) : 
+                        Math.max(0, 1 - Math.max(0, (now - transitionStartTime - p.delay) / 4500));
+                    
+                    if (transitionStartTime === 0) colorT = (currentMode === 'poem' ? 1 : 0);
+
+                    let fontPx = (currentMode === 'tree' && p.type === 'ascii') ? asciiFontSize : 16;
+                    if (currentFont !== fontPx) {
+                        ctx.font = `italic ${fontPx}px "Georgia", serif`; currentFont = fontPx;
+                    }
+
+                    let r, g, b;
+                    if (p.type === 'ascii') {
+                        r = p.baseR + (textRGB.r - p.baseR) * colorT;
+                        g = p.baseG + (textRGB.g - p.baseG) * colorT;
+                        b = p.baseB + (textRGB.b - p.baseB) * colorT;
+                    } else {
+                        r = leafRGB.r + (textRGB.r - leafRGB.r) * colorT;
+                        g = leafRGB.g + (textRGB.g - leafRGB.g) * colorT;
+                        b = leafRGB.b + (textRGB.b - leafRGB.b) * colorT;
+                    }
+                    
+                    ctx.fillStyle = `rgba(${r|0}, ${g|0}, ${b|0}, ${p.alpha})`;
+
+                    let renderChar = (colorT > 0.6) ? p.charTarget : (p.char || p.charTarget);
+
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot);
+                    ctx.fillText(renderChar, 0, 0);
+                    ctx.rotate(-p.rot);
+                    ctx.translate(-p.x, -p.y);
+                }
+            });
+
+            requestAnimationFrame(render);
+        }
+
+        function toggle() {
+            currentMode = (currentMode === 'tree' ? 'poem' : 'tree');
+            transitionStartTime = performance.now();
+            particles.forEach(p => { p.state = 'flocking'; });
+            document.getElementById('hint').style.opacity = '0';
+            setTimeout(() => { document.getElementById('hint').style.opacity = '0.7'; }, 6000);
+        }
+
+        canvas.addEventListener('click', toggle);
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.target.closest('#settings-wrapper')) return; 
+            e.preventDefault(); toggle();
+        }, {passive: false});
+
+        function resize() {
+            dpr = window.devicePixelRatio || 1;
+            width = window.innerWidth || 300;
+            height = window.innerHeight || 300;
+
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            treeCanvas.width = width * dpr;
+            treeCanvas.height = height * dpr;
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            tctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+            tctx.scale(dpr, dpr);
+
+            rebuildTreePosition();
+        }
+
+        function extractAsciiPoints(srcCanvas, step) {
+            let pts = [];
+            if (!srcCanvas) return pts;
+            let sCtx = srcCanvas.getContext('2d', {willReadFrequently: true});
+            let imgData = sCtx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+            let data = imgData.data;
+            
+            // Using pure letters sorted from visual darkest to lightest
+            const chars = "WMQOOGPRBKAZEVFTCJqpbdkhaooynuvzxcIlti ";
+            
+            for (let y = 0; y < srcCanvas.height; y += step) {
+                for (let x = 0; x < srcCanvas.width; x += step) {
+                    let idx = (y * srcCanvas.width + x) * 4;
+                    // Check if pixel is sufficiently opaque
+                    if (data[idx + 3] > 128) {
+                        let r = data[idx], g = data[idx + 1], b = data[idx + 2];
+                        let brightness = (r + g + b) / 3;
+                        let charIdx = Math.floor((brightness / 255) * (chars.length - 1));
+                        
+                        pts.push({
+                            relX: x - srcCanvas.width / 2,
+                            relY: y - srcCanvas.height / 2,
+                            char: chars[Math.max(0, charIdx)],
+                            r: r, g: g, b: b
+                        });
+                    }
+                }
+            }
+            return pts;
+        }
+
+        window.addEventListener('resize', resize);
+        
+        resize();
+        requestAnimationFrame(render);
     </script>
 </body>
 </html>
